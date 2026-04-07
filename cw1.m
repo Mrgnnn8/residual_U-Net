@@ -47,74 +47,53 @@ function lg = residualBlock(lg, numFilters, blockName, inputLayerName)
 end
 
 
+
+
+lg = layerGraph();
+lg = addLayers(lg, imageInputLayer([480 640 3], 'Name', 'input'));
+
 % Network encoder architecture
 
-%lg = residualBlock(lg, 32, 'enBlock1', 'input');
-%lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool1'));
-%lg = connectLayers(lg, 'enBlock1_relu2', 'pool1');
+lg = residualBlock(lg, 32, 'enBlock1', 'input');
+lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool1'));
+lg = connectLayers(lg, 'enBlock1_relu2', 'pool1');
 
 
-%lg = residualBlock(lg, 64, 'enBlock2', 'pool1');
-%lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool2'));
-%lg = connectLayers(lg, 'enBlock2_relu2', 'pool2');
+lg = residualBlock(lg, 64, 'enBlock2', 'pool1');
+lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool2'));
+lg = connectLayers(lg, 'enBlock2_relu2', 'pool2');
 
-%lg = residualBlock(lg, 128, 'enBlock3', 'pool2');
-%lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool3'));
-%lg = connectLayers(lg, 'enBlock3_relu2', 'pool3');
+lg = residualBlock(lg, 128, 'enBlock3', 'pool2');
+lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool3'));
+lg = connectLayers(lg, 'enBlock3_relu2', 'pool3');
 
 
-%lg = residualBlock(lg, 256, 'enBlock4', 'pool3');
-%lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool4'));
-%lg = connectLayers(lg, 'enBlock4_relu2', 'pool4');
+lg = residualBlock(lg, 256, 'enBlock4', 'pool3');
+lg = addLayers(lg, maxPooling2dLayer(2, 'Stride', 2, 'Name', 'pool4'));
+lg = connectLayers(lg, 'enBlock4_relu2', 'pool4');
 
 % Bottle neck 
 
-%lg = residualBlock(lg, 512, 'bottleNeck', 'pool4');
-
-% ResNet-18 initialisation
-
-net = imagePretrainedNetwork("resnet18");
-lg = layerGraph(net);
-
-lg = removeLayers(lg, 'pool5');
-lg = removeLayers(lg, 'fc1000');
-lg = removeLayers(lg, 'prob');
+lg = residualBlock(lg, 512, 'bottleNeck', 'pool4');
 
 % Network decoder architecture
 
 lg = addLayers(lg, transposedConv2dLayer(2, 256, 'Stride', 2, 'Cropping', 'same', 'Name', 'upsample1'));
-lg = connectLayers(lg, 'res5b_relu', 'upsample1');
-lg = addLayers(lg, depthConcatenationLayer(2, 'Name', 'concat1'));
-lg = connectLayers(lg, 'upsample1', 'concat1/in1');
-lg = connectLayers(lg, 'res4b_relu', 'concat1/in2');
-lg = residualBlock(lg, 256, 'deBlock1', 'concat1');
+lg = residualBlock(lg, 256, 'deBlock1', 'bottleNeck_relu2');
+lg = connectLayers(lg, 'deBlock1_relu2', 'upsample1');
 
 lg = addLayers(lg, transposedConv2dLayer(2, 128, 'Stride', 2, 'Cropping', 'same', 'Name', 'upsample2'));
-lg = connectLayers(lg, 'deBlock1_relu2', 'upsample2');
-lg = addLayers(lg, depthConcatenationLayer(2, 'Name', 'concat2'));
-lg = connectLayers(lg, 'upsample2', 'concat2/in1');
-lg = connectLayers(lg, 'res3b_relu', 'concat2/in2');
-lg = residualBlock(lg, 128, 'deBlock2', 'concat2');
+lg = residualBlock(lg, 128, 'deBlock2', 'upsample1');
+lg = connectLayers(lg, 'deBlock2_relu2', 'upsample2');
 
 lg = addLayers(lg, transposedConv2dLayer(2, 64, 'Stride', 2, 'Cropping', 'same', 'Name', 'upsample3'));
-lg = connectLayers(lg, 'deBlock2_relu2', 'upsample3');
-lg = addLayers(lg, depthConcatenationLayer(2,'Name','concat3'));
-lg = connectLayers(lg, 'upsample3', 'concat3/in1');
-lg = connectLayers(lg, 'res2b_relu', 'concat3/in2');
-lg = residualBlock(lg, 64, 'deBlock3', 'concat3');
+lg = residualBlock(lg, 64, 'deBlock3', 'upsample2');
+lg = connectLayers(lg, 'deBlock3_relu2', 'upsample3');
 
 lg = addLayers(lg, transposedConv2dLayer(2, 32, 'Stride', 2, 'Cropping', 'same', 'Name', 'upsample4'));
-lg = connectLayers(lg,'deBlock3_relu2', 'upsample4');
-lg = addLayers(lg, depthConcatenationLayer(2,'Name','concat4'));
-lg = connectLayers(lg, 'upsample4', 'concat4/in1');
-lg = connectLayers(lg, 'conv1_relu', 'concat4/in2');
-lg = residualBlock(lg, 32, 'deBlock4', 'concat4');
+lg = residualBlock(lg, 32, 'deBlock4', 'upsample3');
+lg = connectLayers(lg, 'deBlock4_relu2', 'upsample4');
 
-lg = addLayers(lg, convolution2dLayer(1, 3, 'Name', 'classConv'));
-lg = connectLayers(lg, 'deBlock4_relu2', 'classConv');
 
-net = dlnetwork(lg);
-
-%analyzeNetwork(lg)
 
 plot(lg)
