@@ -1,7 +1,0 @@
-net = imagePretrainedNetwork("resnet18");
-
-
-lg = layerGraph
-
-
-%analyzeNetwork(net)
